@@ -2,12 +2,13 @@ package com.afalenkin.tinkoffStocks.service;
 
 import com.afalenkin.tinkoffStocks.dto.Stock;
 import com.afalenkin.tinkoffStocks.dto.StockPrice;
+import com.afalenkin.tinkoffStocks.exception.PriceNotFoundException;
 import com.afalenkin.tinkoffStocks.exception.StockNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
-import ru.tinkoff.piapi.contract.v1.GetOrderBookResponse;
 import ru.tinkoff.piapi.contract.v1.InstrumentShort;
+import ru.tinkoff.piapi.contract.v1.LastPrice;
 import ru.tinkoff.piapi.contract.v1.Quotation;
 import ru.tinkoff.piapi.core.InstrumentsService;
 import ru.tinkoff.piapi.core.InvestApi;
@@ -16,6 +17,7 @@ import ru.tinkoff.piapi.core.MarketDataService;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -67,34 +69,41 @@ public class TinkoffStockService implements StockService {
 
     @Override
     public StockPrice getStockPrice(String figi) {
-        GetOrderBookResponse orderBook = marketDataService().getOrderBookSync(figi, 0);
+        LastPrice lastPrice = marketDataService()
+                .getLastPrices(List.of(figi))
+                .join()
+                .get(0);
 
-        return extractStockPrice(orderBook);
+        return getStockPrice(lastPrice);
     }
 
     @Override
     public List<StockPrice> getStocksPrices(List<String> figis) {
-        List<CompletableFuture<GetOrderBookResponse>> prices = figis.stream()
-                .map(figi -> marketDataService().getOrderBook(figi, 0))
-                .toList();
+        List<LastPrice> lastPrices = marketDataService().getLastPrices(figis).join();
 
-        return prices.stream()
-                .map(CompletableFuture::join)
-                .map(this::extractStockPrice)
+        return lastPrices.stream()
+                .map(this::getStockPrice)
                 .toList();
     }
 
-    private StockPrice extractStockPrice(GetOrderBookResponse orderBook) {
-        Quotation closePrice = orderBook.getClosePrice();
+    private StockPrice getStockPrice(LastPrice lastPrice) {
+        return Optional.ofNullable(lastPrice)
+                .map(LastPrice::getPrice)
+                .map(this::extractStockPrice)
+                .map(price -> StockPrice.builder()
+                        .figi(lastPrice.getFigi())
+                        .price(price)
+                        .build())
+                .orElseThrow(() -> new PriceNotFoundException("Price not found!"));
+    }
+
+    private BigDecimal extractStockPrice(Quotation closePrice) {
 
         String price = String.valueOf(closePrice.getUnits())
                 .concat(".")
                 .concat(String.valueOf(closePrice.getNano()));
 
-        return StockPrice.builder()
-                .figi(orderBook.getFigi())
-                .price(new BigDecimal(price))
-                .build();
+        return new BigDecimal(price);
     }
 
     @NotNull
