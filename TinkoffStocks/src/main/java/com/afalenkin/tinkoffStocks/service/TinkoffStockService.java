@@ -5,6 +5,7 @@ import com.afalenkin.tinkoffStocks.dto.StockPrice;
 import com.afalenkin.tinkoffStocks.exception.PriceNotFoundException;
 import com.afalenkin.tinkoffStocks.exception.StockNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import ru.tinkoff.piapi.contract.v1.InstrumentShort;
@@ -26,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TinkoffStockService implements StockService {
 
     public static final String SOURCE_CODE = "TINKOFF";
@@ -33,6 +35,7 @@ public class TinkoffStockService implements StockService {
 
     @Override
     public Stock getStockByTicker(String ticker) {
+        log.debug("Get stock {} from TINKOFF", ticker);
         List<InstrumentShort> instruments = instrumentService().findInstrumentSync(ticker);
 
         if (instruments.isEmpty()) {
@@ -43,19 +46,11 @@ public class TinkoffStockService implements StockService {
         return buildStock(stock);
     }
 
-    private Stock buildStock(InstrumentShort stock) {
-        return Stock.builder()
-                .figi(stock.getFigi())
-                .name(stock.getName())
-                .source(SOURCE_CODE)
-                .ticker(stock.getTicker())
-                .type(stock.getInstrumentType())
-                .build();
-    }
-
     @Override
     public List<Stock> getStocksByTickers(List<String> tickers) {
+        log.debug("Get {} stocks from TINKOFF", tickers.size());
         List<CompletableFuture<List<InstrumentShort>>> stocks = tickers.stream()
+                .peek(ticker -> log.debug("Get stock {} from TINKOFF", ticker))
                 .map(instrumentService()::findInstrument)
                 .toList();
 
@@ -69,6 +64,7 @@ public class TinkoffStockService implements StockService {
 
     @Override
     public StockPrice getStockPrice(String figi) {
+        log.debug("Get stock price by figi {} from TINKOFF", figi);
         LastPrice lastPrice = marketDataService()
                 .getLastPrices(List.of(figi))
                 .join()
@@ -79,6 +75,7 @@ public class TinkoffStockService implements StockService {
 
     @Override
     public List<StockPrice> getStocksPrices(List<String> figis) {
+        log.debug("Get {} stocks prices from TINKOFF", figis.size());
         List<LastPrice> lastPrices = marketDataService().getLastPrices(figis).join();
 
         return lastPrices.stream()
@@ -114,5 +111,15 @@ public class TinkoffStockService implements StockService {
     @NotNull
     private InstrumentsService instrumentService() {
         return investApi.getInstrumentsService();
+    }
+
+    private Stock buildStock(InstrumentShort stock) {
+        return Stock.builder()
+                .figi(stock.getFigi())
+                .name(stock.getName())
+                .source(SOURCE_CODE)
+                .ticker(stock.getTicker())
+                .type(stock.getInstrumentType())
+                .build();
     }
 }
