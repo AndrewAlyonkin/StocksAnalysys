@@ -2,6 +2,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <properties>
+        <tinkoff-api.version>1.0.14</tinkoff-api.version>
+        <openapi-ui-version.version>1.6.12</openapi-ui-version.version>
+    </properties>
 
     <parent>
         <artifactId>StocksAnalysys</artifactId>
@@ -18,11 +22,16 @@
         <dependency>
             <groupId>ru.tinkoff.piapi</groupId>
             <artifactId>java-sdk-core</artifactId>
-            <version>1.0.14</version>
+            <version>${tinkoff-api.version}</version>
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-ui</artifactId>
+            <version>${openapi-ui-version.version}</version>
         </dependency>
 
         <dependency>

@@ -9,6 +9,9 @@ import ru.tinkoff.piapi.core.InstrumentsService;
 import ru.tinkoff.piapi.core.InvestApi;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * @author Alenkin Andrew
@@ -31,6 +34,10 @@ public class TinkoffStockService implements StockService {
         }
 
         InstrumentShort stock = instruments.get(0);
+        return buildStock(stock);
+    }
+
+    private Stock buildStock(InstrumentShort stock) {
         return Stock.builder()
                 .figi(stock.getFigi())
                 .name(stock.getName())
@@ -38,5 +45,20 @@ public class TinkoffStockService implements StockService {
                 .ticker(stock.getTicker())
                 .type(stock.getInstrumentType())
                 .build();
+    }
+
+    @Override
+    public List<Stock> getStocksByTickers(List<String> tickers) {
+        InstrumentsService instrumentsService = investApi.getInstrumentsService();
+        List<CompletableFuture<List<InstrumentShort>>> stocks = tickers.stream()
+                .map(instrumentsService::findInstrument)
+                .toList();
+
+        return stocks.stream()
+                .map(CompletableFuture::join)
+                .map(stockList -> stockList.isEmpty() ? null : stockList.get(0))
+                .filter(Objects::nonNull)
+                .map(this::buildStock)
+                .toList();
     }
 }
