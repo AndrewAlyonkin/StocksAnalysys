@@ -20,4 +20,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(new ErrorDto(exception.getLocalizedMessage()), HttpStatus.NOT_FOUND);
 
     }
+
+    @ExceptionHandler({Exception.class})
+    public ResponseEntity<ErrorDto> handleGlobalException(Exception exception) {
+        return new ResponseEntity<>(new ErrorDto(exception.getLocalizedMessage()), HttpStatus.NOT_FOUND);
+    }
 }

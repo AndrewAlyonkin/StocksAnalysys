@@ -1,6 +1,7 @@
 package com.afalenkin.tinkoffStocks.service;
 
 import com.afalenkin.tinkoffStocks.dto.Stock;
+import com.afalenkin.tinkoffStocks.dto.StockPrice;
 
 import java.util.List;
 
@@ -18,4 +19,8 @@ public interface StockService {
     Stock getStockByTicker(String ticker);
 
     List<Stock> getStocksByTickers(List<String> tickers);
+
+    StockPrice getStockPrice(String figi);
+
+    List<StockPrice> getStocksPrices(List<String> figis);
 }

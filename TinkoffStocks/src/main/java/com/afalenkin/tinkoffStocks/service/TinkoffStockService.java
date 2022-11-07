@@ -1,17 +1,22 @@
 package com.afalenkin.tinkoffStocks.service;
 
 import com.afalenkin.tinkoffStocks.dto.Stock;
+import com.afalenkin.tinkoffStocks.dto.StockPrice;
 import com.afalenkin.tinkoffStocks.exception.StockNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
+import ru.tinkoff.piapi.contract.v1.GetOrderBookResponse;
 import ru.tinkoff.piapi.contract.v1.InstrumentShort;
+import ru.tinkoff.piapi.contract.v1.Quotation;
 import ru.tinkoff.piapi.core.InstrumentsService;
 import ru.tinkoff.piapi.core.InvestApi;
+import ru.tinkoff.piapi.core.MarketDataService;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 /**
  * @author Alenkin Andrew
@@ -26,8 +31,7 @@ public class TinkoffStockService implements StockService {
 
     @Override
     public Stock getStockByTicker(String ticker) {
-        InstrumentsService instrumentsService = investApi.getInstrumentsService();
-        List<InstrumentShort> instruments = instrumentsService.findInstrumentSync(ticker);
+        List<InstrumentShort> instruments = instrumentService().findInstrumentSync(ticker);
 
         if (instruments.isEmpty()) {
             throw new StockNotFoundException(String.format("Instrument with ticker %s not found!", ticker));
@@ -49,9 +53,8 @@ public class TinkoffStockService implements StockService {
 
     @Override
     public List<Stock> getStocksByTickers(List<String> tickers) {
-        InstrumentsService instrumentsService = investApi.getInstrumentsService();
         List<CompletableFuture<List<InstrumentShort>>> stocks = tickers.stream()
-                .map(instrumentsService::findInstrument)
+                .map(instrumentService()::findInstrument)
                 .toList();
 
         return stocks.stream()
@@ -60,5 +63,47 @@ public class TinkoffStockService implements StockService {
                 .filter(Objects::nonNull)
                 .map(this::buildStock)
                 .toList();
+    }
+
+    @Override
+    public StockPrice getStockPrice(String figi) {
+        GetOrderBookResponse orderBook = marketDataService().getOrderBookSync(figi, 0);
+
+        return extractStockPrice(orderBook);
+    }
+
+    @Override
+    public List<StockPrice> getStocksPrices(List<String> figis) {
+        List<CompletableFuture<GetOrderBookResponse>> prices = figis.stream()
+                .map(figi -> marketDataService().getOrderBook(figi, 0))
+                .toList();
+
+        return prices.stream()
+                .map(CompletableFuture::join)
+                .map(this::extractStockPrice)
+                .toList();
+    }
+
+    private StockPrice extractStockPrice(GetOrderBookResponse orderBook) {
+        Quotation closePrice = orderBook.getClosePrice();
+
+        String price = String.valueOf(closePrice.getUnits())
+                .concat(".")
+                .concat(String.valueOf(closePrice.getNano()));
+
+        return StockPrice.builder()
+                .figi(orderBook.getFigi())
+                .price(new BigDecimal(price))
+                .build();
+    }
+
+    @NotNull
+    private MarketDataService marketDataService() {
+        return investApi.getMarketDataService();
+    }
+
+    @NotNull
+    private InstrumentsService instrumentService() {
+        return investApi.getInstrumentsService();
     }
 }
