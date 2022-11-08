@@ -8,3 +8,8 @@ moex:
 logging:
   level:
     com.afalenkin.moexStocks: INFO
+
+spring:
+  cache:
+    caffeine:
+      spec: maximumSize=48,expireAfterAccess=1h

@@ -9,11 +9,13 @@
     </parent>
 
     <artifactId>moexStocks</artifactId>
-    <version>${major.version}</version>
+    <version>1.0.0</version>
     <name>moexStocks</name>
 
     <properties>
         <spring-cloud.version>2021.0.4</spring-cloud.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
     <dependencies>
@@ -34,7 +36,10 @@
             <artifactId>springdoc-openapi-ui</artifactId>
             <version>${openapi-ui-version.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -70,14 +75,6 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>7</source>
-                    <target>7</target>
                 </configuration>
             </plugin>
         </plugins>

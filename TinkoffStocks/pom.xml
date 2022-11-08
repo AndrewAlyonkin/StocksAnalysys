@@ -13,7 +13,7 @@
     </parent>
 
     <artifactId>TinkoffStocks</artifactId>
-    <version>${major.version}</version>
+    <version>1.0.0</version>
     <name>TinkoffStocks</name>
     <description>Demo project for Spring Boot</description>
 
