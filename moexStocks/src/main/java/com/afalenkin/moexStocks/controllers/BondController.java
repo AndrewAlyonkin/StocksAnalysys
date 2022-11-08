@@ -1,5 +1,7 @@
 package com.afalenkin.moexStocks.controllers;
 
+import com.afalenkin.moexStocks.dto.StockPriceRequest;
+import com.afalenkin.moexStocks.dto.StockPricesResponse;
 import com.afalenkin.moexStocks.dto.StocksResponse;
 import com.afalenkin.moexStocks.dto.TickerRequest;
 import com.afalenkin.moexStocks.service.BondService;
@@ -24,4 +26,10 @@ public class BondController {
     public StocksResponse getBonds(@RequestBody TickerRequest request){
         return new StocksResponse(bondService.getBonds(request.getTickers()));
     }
+
+    @PutMapping(path = "/prices")
+    public StockPricesResponse getPrices(@RequestBody StockPriceRequest request) {
+        return new StockPricesResponse(bondService.getPrices(request.getFigiList()));
+    }
+
 }
